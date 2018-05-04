@@ -13,6 +13,14 @@ import torchvision.transforms as transforms
 import AF_1
 from torch.autograd import Variable
 
+import Hydraplus
+from visdom import Visdom
+import numpy as np
+viz = Visdom()
+win = viz.line(
+    Y=np.array([0.2]),
+    name="1"
+)
 
 def default_loader(path):
     return Image.open(path).convert('RGB')
@@ -60,9 +68,9 @@ def imshow(imgs):
 
 
 def checkpoint(epoch):
-    if not os.path.exists("checkpoint1"):
-        os.mkdir("checkpoint1")
-    path = "./checkpoint1/checkpoint_epoch_{}".format(epoch)
+    if not os.path.exists("checkpoint5"):
+        os.mkdir("checkpoint5")
+    path = "./checkpoint5/checkpoint_epoch_{}".format(epoch)
     torch.save(net.state_dict(),path)
 
 
@@ -73,7 +81,10 @@ def checkpoint(epoch):
 
 mytransform = transforms.Compose([
     
-    transforms.Resize((299,299)),       #TODO:maybe need to change1
+    transforms.RandomHorizontalFlip(),
+    transforms.Resize((360,360)),
+    transforms.RandomCrop(299),
+    #transforms.Resize((299,299)),       #TODO:maybe need to change1
     transforms.ToTensor(),            # mmb,
     ]
 )
@@ -82,7 +93,7 @@ mytransform = transforms.Compose([
 set = myImageFloder(root = "./data/PA-100K/release_data/release_data", label = "./data/PA-100K/annotation/annotation.mat", transform = mytransform )
 imgLoader = torch.utils.data.DataLoader(
          set, 
-         batch_size= 10, shuffle= False, num_workers= 2)
+         batch_size= 10, shuffle= True, num_workers= 2)
 
 
 print len(set)
@@ -92,19 +103,45 @@ print len(set)
 images,labels = dataiter.next()
 imshow(images)'''
 
-net = AF_1.AF1()
-net.cuda()
+net = Hydraplus.HP()
 
 
-
-historyPath = "./checkpoint1/checkpoint_epoch_10"                     #FIXME:PATH
-net = AF_1.AF1()
-net.load_state_dict(torch.load(historyPath))
-net.cuda()
-
+'''MPath = "./checkpoint1/checkpoint_epoch_60"                 #FIXME:
+net.MNet.load_state_dict(torch.load(MPath))
 for param in net.MNet.parameters():
     param.requires_grad = False
 
+path1 = './checkpoint2/checkpoint_epoch_20'
+net.AF1.load_state_dict(torch.load(path1))
+for param in net.AF1.parameters():
+    param.requires_grad = False
+path2 = './checkpoint3/checkpoint_epoch_15'
+net.AF2.load_state_dict(torch.load(path2))
+for param in net.AF2.parameters():
+    param.requires_grad = False
+path3 = './checkpoint4/checkpoint_epoch_30'
+net.AF3.load_state_dict(torch.load(path3))
+for param in net.AF3.parameters():
+    param.requires_grad = False'''
+
+path = "./checkpoint5/checkpoint_epoch_40"                 #FIXME:
+net.load_state_dict(torch.load(path))
+for param in net.MNet.parameters():
+    param.requires_grad = False
+
+
+for param in net.AF1.parameters():
+    param.requires_grad = False
+
+for param in net.AF2.parameters():
+    param.requires_grad = False
+
+for param in net.AF3.parameters():
+    param.requires_grad = False
+
+
+net.cuda()
+net.train()
 #print(net.parameters())
 #print(net)
 
@@ -115,40 +152,19 @@ for param in net.MNet.parameters():
 # u'Skirt&Dress', u'boots']
 
 
-weight = torch.FloatTensor(1,26)
-
-weight[0][0] = 1.84
-weight[0][1] = 2.64 + 1
-weight[0][2] = 1.03
-weight[0][3] = 2.69 + 1
-weight[0][4] = 2.01
-weight[0][5] = 1.82
-weight[0][6] = 2.01
-weight[0][7] = 2.64 + 1
-weight[0][8] = 2.12
-weight[0][9] = 2.34 + 1
-weight[0][10] = 2.23
-weight[0][11] = 2.34
-weight[0][12] = 2.69 + 1
-weight[0][13] = 1.75
-weight[0][14] = 1.55
-weight[0][15] = 2.56
-weight[0][16] = 2.41
-weight[0][17] = 2.41
-weight[0][18] = 2.61
-weight[0][19] = 2.71 + 2
-weight[0][20] = 2.69 + 2
-weight[0][21] = 2.61 + 2
-weight[0][22] = 1.23
-weight[0][23] = 2.39
-weight[0][24] = 2.50 
-weight[0][25] = 2.69 + 2    
+weight = torch.Tensor([1.7226262226969686, 2.6802565029531618, 1.0682133644154836, 2.580801475214588, 
+1.8984257687918218, 2.046590013290684, 1.9017984669155032, 2.6014006200502586, 
+2.272458988404639, 2.2625669787021203, 2.245380512162444, 2.3452980639899033, 
+2.692210221689372, 1.5128949487853383, 1.7967419553099035, 2.5832221110933764, 
+2.3302195718894034, 2.438480257574324, 2.6012705532709526, 2.704589108443237, 
+2.6704246374231753, 2.6426970354162505, 1.3377813061118478, 2.284449325734624, 
+2.417810793601295, 2.7015143874115033])
 
 
 criterion = nn.BCEWithLogitsLoss(weight = weight)          #TODO:1.learn 2. weight
 criterion.cuda()
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,net.parameters()), lr=0.001, momentum=0.9)
+optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,net.parameters()), lr=0.001)
 
 running_loss = 0.0
 for epoch in range(1000):
@@ -176,11 +192,20 @@ for epoch in range(1000):
             
             # print statistics
             running_loss += loss.data[0]
-            if i % 1000 == 999: # print every 1000 mini-batches
-                print('[ %d %5d] loss: %.3f' % ( epoch+20,i+1, running_loss / 1000))
+            if i % 100 == 0: # print every 1000 mini-batches
+                print('[ %d %5d] loss: %.6f' % ( epoch,i+1, running_loss / 100))
+                viz.updateTrace(
+                    X=np.array([epoch+i/8000.0]),
+                    Y=np.array([running_loss]),
+                    win=win,
+                    name="1"
+                )
                 running_loss = 0.0
-    
-    checkpoint(epoch + 20)
+
+    if epoch % 5 == 0:
+        checkpoint(epoch)
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = param_group['lr'] * 0.95
 
 
     

@@ -10,7 +10,7 @@ import torch.nn as nn
 import scipy.io as scio
 import torchvision.transforms as transforms
 
-import AF_1
+import inception_v3
 from torch.autograd import Variable
 
 
@@ -30,6 +30,15 @@ class myImageFloder(data.Dataset):
             if os.path.isfile(os.path.join(root,name[0][0])):
                 #imgs.append((name[0][0],[x*2-1 for x in testlabel[count]]))   (-1,1)
                 imgs.append((name[0][0],testlabel[count]))
+                if testlabel[count][21] == 1:
+                    for i in range(20):
+                        imgs.append((name[0][0],testlabel[count]))
+                if testlabel[count][12] == 1:
+                    for i in range(90):
+                        imgs.append((name[0][0],testlabel[count]))
+                if testlabel[count][25] == 1:
+                    for i in range(150):
+                        imgs.append((name[0][0],testlabel[count]))
             count=count+1
 
         self.root = root
@@ -60,9 +69,9 @@ def imshow(imgs):
 
 
 def checkpoint(epoch):
-    if not os.path.exists("checkpoint1"):
-        os.mkdir("checkpoint1")
-    path = "./checkpoint1/checkpoint_epoch_{}".format(epoch)
+    if not os.path.exists("./checkpoint/retrainmi"):
+        os.mkdir("./checkpoint/retrainmi")
+    path = "./checkpoint/retrainmi/checkpoint_epoch_{}".format(epoch)
     torch.save(net.state_dict(),path)
 
 
@@ -82,7 +91,7 @@ mytransform = transforms.Compose([
 set = myImageFloder(root = "./data/PA-100K/release_data/release_data", label = "./data/PA-100K/annotation/annotation.mat", transform = mytransform )
 imgLoader = torch.utils.data.DataLoader(
          set, 
-         batch_size= 10, shuffle= False, num_workers= 2)
+         batch_size= 10, shuffle = True, num_workers = 2)
 
 
 print len(set)
@@ -92,20 +101,11 @@ print len(set)
 images,labels = dataiter.next()
 imshow(images)'''
 
-net = AF_1.AF1()
-net.cuda()
-
-
-
-historyPath = "./checkpoint1/checkpoint_epoch_10"                     #FIXME:PATH
-net = AF_1.AF1()
+historyPath = "./history/checkpoint/3.27-0.643"                     #FIXME:PATH
+net = inception_v3.Inception3()
 net.load_state_dict(torch.load(historyPath))
 net.cuda()
 
-for param in net.MNet.parameters():
-    param.requires_grad = False
-
-#print(net.parameters())
 #print(net)
 
 
@@ -118,37 +118,36 @@ for param in net.MNet.parameters():
 weight = torch.FloatTensor(1,26)
 
 weight[0][0] = 1.84
-weight[0][1] = 2.64 + 1
+weight[0][1] = 2.64 
 weight[0][2] = 1.03
-weight[0][3] = 2.69 + 1
+weight[0][3] = 2.69 
 weight[0][4] = 2.01
 weight[0][5] = 1.82
 weight[0][6] = 2.01
-weight[0][7] = 2.64 + 1
+weight[0][7] = 2.64 
 weight[0][8] = 2.12
-weight[0][9] = 2.34 + 1
+weight[0][9] = 2.34 
 weight[0][10] = 2.23
 weight[0][11] = 2.34
-weight[0][12] = 2.69 + 1
+weight[0][12] = 2.69 
 weight[0][13] = 1.75
 weight[0][14] = 1.55
 weight[0][15] = 2.56
 weight[0][16] = 2.41
 weight[0][17] = 2.41
 weight[0][18] = 2.61
-weight[0][19] = 2.71 + 2
-weight[0][20] = 2.69 + 2
-weight[0][21] = 2.61 + 2
+weight[0][19] = 2.71 
+weight[0][20] = 2.69 
+weight[0][21] = 2.61 
 weight[0][22] = 1.23
 weight[0][23] = 2.39
 weight[0][24] = 2.50 
-weight[0][25] = 2.69 + 2    
-
+weight[0][25] = 2.69   
 
 criterion = nn.BCEWithLogitsLoss(weight = weight)          #TODO:1.learn 2. weight
 criterion.cuda()
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,net.parameters()), lr=0.001, momentum=0.9)
+optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 running_loss = 0.0
 for epoch in range(1000):
@@ -176,11 +175,11 @@ for epoch in range(1000):
             
             # print statistics
             running_loss += loss.data[0]
-            if i % 1000 == 999: # print every 1000 mini-batches
-                print('[ %d %5d] loss: %.3f' % ( epoch+20,i+1, running_loss / 1000))
+            if i % 1000 == 999: # print every 2000 mini-batches
+                print('[ %d %5d] loss: %.6f' % ( epoch,i+1, running_loss / 1000))
                 running_loss = 0.0
     
-    checkpoint(epoch + 20)
+    checkpoint(epoch)
 
 
     

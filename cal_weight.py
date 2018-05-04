@@ -10,9 +10,10 @@ import torch.nn as nn
 import scipy.io as scio
 import torchvision.transforms as transforms
 
-import inception_v3
+
 from torch.autograd import Variable
 
+import math
 
 def default_loader(path):
     return Image.open(path).convert('RGB')
@@ -22,8 +23,8 @@ class myImageFloder(data.Dataset):
 
         fn = scio.loadmat(label)
         imgs = []
-        testlabel = fn['test_label']
-        testimg = fn['test_images_name']
+        testlabel = fn['train_label']
+        testimg = fn['train_images_name']
         count = 0
         for name in testimg:
             #print name[0][0]
@@ -68,14 +69,8 @@ def checkpoint(epoch):
 
 
 mytransform = transforms.Compose([
-<<<<<<< HEAD
     
     transforms.Resize((299,299)),       #FIXME:resize
-=======
-    transforms.Resize((299,299)),
-
-    #transforms.Resize((299,299)),       #FIXME:resize
->>>>>>> merge 3 AF module
     transforms.ToTensor(),            # mmb,
     ]
 )
@@ -89,77 +84,29 @@ imgLoader = torch.utils.data.DataLoader(
 
 print len(set)
 
-mat = scio.loadmat("./data/PA-100K/annotation/annotation.mat")
-att = mat["attributes"]
 
 count = 0
-classes = []
-for c in att:
-    classes.append(c[0][0])
-    count = count + 1
-print(classes)
-
-<<<<<<< HEAD
-path = "./checkpoint/checkpoint_epoch_40"                     #FIXME:PATH
-net = inception_v3.Inception3()
-net.load_state_dict(torch.load(path))
-=======
-path = "./checkpoint1/checkpoint_epoch_60"                     #FIXME:PATH
-net = inception_v3.Inception3()
-net.load_state_dict(torch.load(path))
-net.eval()
->>>>>>> merge 3 AF module
-net.cuda()
 
 dataiter = iter(imgLoader)
-
-count = 0
-
-TP = [0.0] * 26
 P  = [0.0] * 26
-TN = [0.0] * 26
 N  = [0.0] * 26
-while count < 10000:
+while count < 80000:
     images,labels = dataiter.next()
-<<<<<<< HEAD
-    inputs, labels = Variable(images).cuda(), Variable(labels).cuda()
-=======
-    inputs, labels = Variable(images,volatile = True).cuda(), Variable(labels).cuda()
->>>>>>> merge 3 AF module
-    outputs = net(inputs)
-                
-
-
-    i = 0
-    for item in outputs[0]:
-            if item.data[0] > 0 :
-                if labels[0][i].data[0] == 1:
-                    TP[i] = TP[i] + 1
-                    P[i] = P[i] + 1
-                else : 
-                    N[i] = N[i]  + 1
+    for i in range(26):         
+            if labels[0][i] == 1:
+                P[i] = P[i] + 1
             else :
-                if labels[0][i].data[0] == 0 :
-                    TN[i] = TN[i] + 1
-                    N[i] = N[i] + 1
-                else:
-                    P[i] = P[i] + 1
-            i = i + 1       
+
+                N[i] = N[i] + 1   
     count = count + 1
 
-Accuracy = 0
-print(TP)
-print(TN)
+
+
 print(P)
 print(N)
-for l in range(26):
-<<<<<<< HEAD
-=======
-    print(l, ":" , (TP[l]/P[l] + TN[l]/N[l])/2)
->>>>>>> merge 3 AF module
-    Accuracy =  TP[l]/P[l] + TN[l]/N[l] + Accuracy
-meanAccuracy = Accuracy / 52
 
-print("mA: %f",meanAccuracy)
+w = []
+for i in range(26):
+    w.append(math.pow(math.e,N[i]/80000.0))
 
-
+print(w)

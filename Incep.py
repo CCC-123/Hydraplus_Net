@@ -33,7 +33,7 @@ def inception_v3(pretrained=False, **kwargs):
 
 class Inception3(nn.Module):
 
-    def __init__(self,ret = False, num_classes=26, aux_logits=False, transform_input=False): #ccc changed here
+    def __init__(self,ret = False, nfc = False, num_classes=26, aux_logits=False, transform_input=False): #ccc changed here
         super(Inception3, self).__init__()
         self.aux_logits = aux_logits
         self.transform_input = transform_input
@@ -59,6 +59,7 @@ class Inception3(nn.Module):
 
 
         self.ret = ret
+        self.nfc = nfc
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
@@ -117,6 +118,11 @@ class Inception3(nn.Module):
         # 8 x 8 x 2048
         z = self.Mixed_7c(z)
         # 8 x 8 x 2048
+        if self.ret:
+            return x,y,z
+        if self.nfc:
+            return z
+
         gg = F.avg_pool2d(z, kernel_size=8)
         # 1 x 1 x 2048
         gg = F.dropout(gg, training=self.training)
@@ -127,8 +133,6 @@ class Inception3(nn.Module):
         # 1000 (num_classes)
         if self.training and self.aux_logits:
             return gg, aux
-        if self.ret:
-            return x,y,z
         return gg
 
 

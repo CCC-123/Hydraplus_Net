@@ -57,7 +57,7 @@ def imshow(imgs):
 
 mytransform = transforms.Compose([
     
-    transforms.CenterCrop(224),
+    transforms.Resize(256),
     transforms.ToTensor(),            # mmb
     ]
 )
@@ -66,7 +66,7 @@ mytransform = transforms.Compose([
 set = myImageFloder(root = "./data/PA-100K/release_data/release_data", label = "./data/PA-100K/annotation/annotation.mat", transform = mytransform )
 imgLoader = torch.utils.data.DataLoader(
          set, 
-         batch_size= 2, shuffle= False, num_workers= 2)
+         batch_size= 1, shuffle= False, num_workers= 2)
 
 
 print len(set)

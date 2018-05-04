@@ -1,31 +1,40 @@
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import Incep
 
-class AF1(nn.Module):
 
-    def __init__(self, num_classes=26, aux_logits=False, transform_input=False,ret = False): #ccc changed here
-        super(AF1, self).__init__()
+
+
+
+
+class CNet(nn.Module):
+
+    def __init__(self, num_classes=26, aux_logits=False, transform_input=False): #ccc changed here
+        super(CNet, self).__init__()
         self.aux_logits = aux_logits
         self.transform_input = transform_input
-        self.MNet = Incep.Inception3(ret = True)
-
-
-
-        self.Att = BasicConv2d(288,8,kernel_size=1)
-        self.Incep2 = nn.Sequential(InceptionB(288),InceptionC(768, channels_7x7=128),
-                        InceptionC(768, channels_7x7=160),
-                        InceptionC(768, channels_7x7=160),InceptionC(768, channels_7x7=192))
-  
+        self.Conv2d_1a_3x3 = BasicConv2d(3, 32, kernel_size=3, stride=2)
+        self.Conv2d_2a_3x3 = BasicConv2d(32, 32, kernel_size=3)
+        self.Conv2d_2b_3x3 = BasicConv2d(32, 64, kernel_size=3, padding=1)
+        self.Conv2d_3b_1x1 = BasicConv2d(64, 80, kernel_size=1)
+        self.Conv2d_4a_3x3 = BasicConv2d(80, 192, kernel_size=3)
+        self.Mixed_5b = InceptionA(192, pool_features=32)
+        self.Mixed_5c = InceptionA(256, pool_features=64)
+        self.Mixed_5d = InceptionA(288, pool_features=64)
+        self.Mixed_6a = InceptionB(288)
+        self.Mixed_6b = InceptionC(768, channels_7x7=128)
+        self.Mixed_6c = InceptionC(768, channels_7x7=160)
+        self.Mixed_6d = InceptionC(768, channels_7x7=160)
+        self.Mixed_6e = InceptionC(768, channels_7x7=192)
         if aux_logits:
             self.AuxLogits = InceptionAux(768, num_classes)
-        self.Incep3 = nn.Sequential(InceptionD(768),InceptionE(1280),InceptionE(2048))
+        self.Mixed_7a = InceptionD(768)
+        self.Mixed_7b = InceptionE(1280)
+        self.Mixed_7c = InceptionE(2048)
 
-        self.Incep3_2 = nn.Sequential(InceptionD(768),InceptionE(1280),InceptionE(2048))
-        self.fc = nn.Linear(2048 * 24, num_classes)
-
-        self.ret = ret
+        self.att = BasicConv2d(2048,num_classes,kernel_size = 1)
+        self.fc = nn.Linear(num_classes,num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -46,77 +55,60 @@ class AF1(nn.Module):
             x[:, 1] = x[:, 1] * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
             x[:, 2] = x[:, 2] * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
         # 299 x 299 x 3
-        F1,F2,F3 = self.MNet(x)
-        #F1 35 x 35 x 288
-        #F2 17 x 17 x 768
-        #F3  8 x 8 x 2048
+        x = self.Conv2d_1a_3x3(x)
+        # 149 x 149 x 32
+        x = self.Conv2d_2a_3x3(x)
+        # 147 x 147 x 32
+        x = self.Conv2d_2b_3x3(x)
+        # 147 x 147 x 64
+        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        # 73 x 73 x 64
+        x = self.Conv2d_3b_1x1(x)
+        # 73 x 73 x 80
+        x = self.Conv2d_4a_3x3(x)
+        # 71 x 71 x 192
+        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        # 35 x 35 x 192
+        x = self.Mixed_5b(x)
+        # 35 x 35 x 256
+        x = self.Mixed_5c(x)
+        # 35 x 35 x 288
+        x = self.Mixed_5d(x)
+        # 35 x 35 x 288
+        x = self.Mixed_6a(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6b(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6c(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6d(x)
+        # 17 x 17 x 768
+        x = self.Mixed_6e(x)
+        # 17 x 17 x 768
+        if self.training and self.aux_logits:
+            aux = self.AuxLogits(x)
+        # 17 x 17 x 768
+        x = self.Mixed_7a(x)
+        # 8 x 8 x 1280
+        x = self.Mixed_7b(x)
+        # 8 x 8 x 2048
+        x = self.Mixed_7c(x)
+        # 8 x 8 x 2048
 
+        x = self.att(x)
+        # 8 x 8 x n
+        x = F.adaptive_avg_pool2d(x,1)
+       
+        # 1 x 1 x n
         
-
-
-
-
-        attentive = self.Att(F1)
-        #35 x 35 x 8
-
-
-
-        ret = 0
-        for i in range(8) :
-            #print(F1.size())           N x c x h x w
-            temp = attentive[:,i].clone()
-            temp = temp.view(-1,1,35,35).expand(-1,288,35,35)
-            R1 = F1 * temp
-            R1 = self.Incep2(R1)
-            # 17 x 17 x 768
-            R1 = self.Incep3(R1)
-            # 8 x 8 x 2048
-            if i == 0:
-                ret = R1
-            else :
-                #print(type(ret),type(R1))
-                ret = torch.cat((ret,R1),dim = 1)
-        
-        # ret 8 x 8 x (2048 x 8)
-
-
-        attentive2 = F.avg_pool2d(attentive,kernel_size = 2,stride = 2)
-
-        for i in range(8) :
-            temp = attentive2[:,i].clone()
-            temp = temp.view(-1,1,17,17).expand(-1,768,17,17)
-            R2 = F2 * temp
-            R2 = self.Incep3_2(R2)
-            # 8 x 8 x 2048
-            ret = torch.cat((ret,R2),dim = 1)
-
-
-        #ret 8 x 8 x (2048 x 16)       
-
-        attentive3 = F.avg_pool2d(attentive,kernel_size = 4,stride = 4)
-        for i in range(8) :
-            temp = attentive3[:,i].clone()
-            temp = temp.view(-1,1,8,8).expand(-1,2048,8,8)
-            R3 = F3 * temp
-            ret = torch.cat((ret,R3),dim = 1)
-
-        if self.ret:
-            return ret
-        # ret 8 x 8 x(2048 x 24)
-        ret = F.avg_pool2d(ret, kernel_size=8)
-
-        # 1 x 1 x (2048 x 24)
-        ret = F.dropout(ret, training=self.training)
-        # 1 x 1 x (2048 x 24)
-        ret = ret.view(ret.size(0), -1)
-        # 2048 x 24
-
-        ret = self.fc(ret)
+        # 1 x 1 x n
+        x = x.view(x.size(0), -1)
+        # n
+        x = self.fc(x)
         # 1000 (num_classes)
-
-
-
-        return ret
+        if self.training and self.aux_logits:
+            return x, aux
+        return x
 
 
 class InceptionA(nn.Module):

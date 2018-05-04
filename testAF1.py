@@ -93,9 +93,10 @@ for c in att:
     count = count + 1
 print(classes)
 
-path = "./checkpoint1/checkpoint_epoch_10"                     #FIXME:PATH
+path = "./checkpoint2/checkpoint_epoch_15"                     #FIXME:PATH
 net = AF_1.AF1()
 net.load_state_dict(torch.load(path))
+net.eval()
 net.cuda()
 
 dataiter = iter(imgLoader)
@@ -108,7 +109,7 @@ TN = [0.0] * 26
 N  = [0.0] * 26
 while count < 10000:
     images,labels = dataiter.next()
-    inputs, labels = Variable(images).cuda(), Variable(labels).cuda()
+    inputs, labels = Variable(images,volatile = True).cuda(), Variable(labels).cuda()
     outputs = net(inputs)
                 
 
@@ -127,7 +128,9 @@ while count < 10000:
                     N[i] = N[i] + 1
                 else:
                     P[i] = P[i] + 1
-            i = i + 1       
+            i = i + 1 
+    if count % 1000 == 0:
+        print(count)      
     count = count + 1
 
 Accuracy = 0
@@ -136,6 +139,7 @@ print(TN)
 print(P)
 print(N)
 for l in range(26):
+    print(l, ":" , (TP[l]/P[l] + TN[l]/N[l])/2)
     Accuracy =  TP[l]/P[l] + TN[l]/N[l] + Accuracy
 meanAccuracy = Accuracy / 52
 

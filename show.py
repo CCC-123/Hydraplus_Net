@@ -10,7 +10,7 @@ import torch.nn as nn
 import scipy.io as scio
 import torchvision.transforms as transforms
 
-import inception_v3
+import Hydraplus
 from torch.autograd import Variable
 
 
@@ -93,9 +93,10 @@ for c in att:
     count = count + 1
 print(classes)
 
-path = "./checkpoint/checkpoint_epoch_40"                     #FIXME:PATH
-net = inception_v3.Inception3()
+path = "./checkpoint5/checkpoint_epoch_10"                     #FIXME:PATH
+net = Hydraplus.HP()
 net.load_state_dict(torch.load(path))
+net.eval()
 net.cuda()
 
 dataiter = iter(imgLoader)
@@ -124,7 +125,7 @@ while True and x != 'n':
     count = 0
     for item in labels[0]:
         if item.data[0] > 0:
-            print(classes[count] + ' ')
+            print(classes[count])
         count = count + 1
 
 

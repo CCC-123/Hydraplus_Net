@@ -3,17 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import Incep
 
-class AF1(nn.Module):
+class AF2(nn.Module):
 
     def __init__(self, num_classes=26, aux_logits=False, transform_input=False,ret = False): #ccc changed here
-        super(AF1, self).__init__()
+        super(AF2, self).__init__()
         self.aux_logits = aux_logits
         self.transform_input = transform_input
         self.MNet = Incep.Inception3(ret = True)
 
 
 
-        self.Att = BasicConv2d(288,8,kernel_size=1)
+        self.Att = BasicConv2d(768,8,kernel_size=1)
         self.Incep2 = nn.Sequential(InceptionB(288),InceptionC(768, channels_7x7=128),
                         InceptionC(768, channels_7x7=160),
                         InceptionC(768, channels_7x7=160),InceptionC(768, channels_7x7=192))
@@ -25,8 +25,8 @@ class AF1(nn.Module):
         self.Incep3_2 = nn.Sequential(InceptionD(768),InceptionE(1280),InceptionE(2048))
         self.fc = nn.Linear(2048 * 24, num_classes)
 
+        self.patch = nn.ReflectionPad2d((0,1,0,1))
         self.ret = ret
-
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
@@ -56,15 +56,15 @@ class AF1(nn.Module):
 
 
 
-        attentive = self.Att(F1)
-        #35 x 35 x 8
+        attentive = self.Att(F2)
+        #17 x 17 x 8
 
 
 
-        ret = 0
+        attentive1 = self.patch(F.upsample(attentive,scale_factor=2))
         for i in range(8) :
             #print(F1.size())           N x c x h x w
-            temp = attentive[:,i].clone()
+            temp = attentive1[:,i].clone()
             temp = temp.view(-1,1,35,35).expand(-1,288,35,35)
             R1 = F1 * temp
             R1 = self.Incep2(R1)
@@ -80,7 +80,7 @@ class AF1(nn.Module):
         # ret 8 x 8 x (2048 x 8)
 
 
-        attentive2 = F.avg_pool2d(attentive,kernel_size = 2,stride = 2)
+        attentive2 = attentive
 
         for i in range(8) :
             temp = attentive2[:,i].clone()
@@ -93,12 +93,13 @@ class AF1(nn.Module):
 
         #ret 8 x 8 x (2048 x 16)       
 
-        attentive3 = F.avg_pool2d(attentive,kernel_size = 4,stride = 4)
+        attentive3 = F.avg_pool2d(attentive,kernel_size = 2,stride = 2)
         for i in range(8) :
             temp = attentive3[:,i].clone()
             temp = temp.view(-1,1,8,8).expand(-1,2048,8,8)
             R3 = F3 * temp
             ret = torch.cat((ret,R3),dim = 1)
+
 
         if self.ret:
             return ret

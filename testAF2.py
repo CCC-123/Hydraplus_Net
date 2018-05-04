@@ -10,7 +10,7 @@ import torch.nn as nn
 import scipy.io as scio
 import torchvision.transforms as transforms
 
-import inception_v3
+import AF_2
 from torch.autograd import Variable
 
 
@@ -68,14 +68,8 @@ def checkpoint(epoch):
 
 
 mytransform = transforms.Compose([
-<<<<<<< HEAD
     
     transforms.Resize((299,299)),       #FIXME:resize
-=======
-    transforms.Resize((299,299)),
-
-    #transforms.Resize((299,299)),       #FIXME:resize
->>>>>>> merge 3 AF module
     transforms.ToTensor(),            # mmb,
     ]
 )
@@ -99,16 +93,10 @@ for c in att:
     count = count + 1
 print(classes)
 
-<<<<<<< HEAD
-path = "./checkpoint/checkpoint_epoch_40"                     #FIXME:PATH
-net = inception_v3.Inception3()
-net.load_state_dict(torch.load(path))
-=======
-path = "./checkpoint1/checkpoint_epoch_60"                     #FIXME:PATH
-net = inception_v3.Inception3()
+path = "./checkpoint3/checkpoint_epoch_30"                     #FIXME:PATH
+net = AF_2.AF2()
 net.load_state_dict(torch.load(path))
 net.eval()
->>>>>>> merge 3 AF module
 net.cuda()
 
 dataiter = iter(imgLoader)
@@ -121,11 +109,7 @@ TN = [0.0] * 26
 N  = [0.0] * 26
 while count < 10000:
     images,labels = dataiter.next()
-<<<<<<< HEAD
-    inputs, labels = Variable(images).cuda(), Variable(labels).cuda()
-=======
     inputs, labels = Variable(images,volatile = True).cuda(), Variable(labels).cuda()
->>>>>>> merge 3 AF module
     outputs = net(inputs)
                 
 
@@ -144,7 +128,9 @@ while count < 10000:
                     N[i] = N[i] + 1
                 else:
                     P[i] = P[i] + 1
-            i = i + 1       
+            i = i + 1 
+    if count % 1000 == 0:
+        print(count)      
     count = count + 1
 
 Accuracy = 0
@@ -153,10 +139,7 @@ print(TN)
 print(P)
 print(N)
 for l in range(26):
-<<<<<<< HEAD
-=======
     print(l, ":" , (TP[l]/P[l] + TN[l]/N[l])/2)
->>>>>>> merge 3 AF module
     Accuracy =  TP[l]/P[l] + TN[l]/N[l] + Accuracy
 meanAccuracy = Accuracy / 52
 

@@ -1,10 +1,13 @@
 checkpoint/
 checkpoint1/
-history/
-
+checkpoint2/
+checkpoint3/
+checkpoint4/
+checkpoint5/
 data/
+history/
+temp/
 
+*.pyc
+checkpoint_epoch_0
 
-inception_v3.pyc
-Incep.pyc
-AF_1.pyc
