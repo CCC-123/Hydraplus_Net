@@ -93,7 +93,7 @@ for c in att:
     count = count + 1
 print(classes)
 
-path = "./checkpoint5/checkpoint_epoch_10"                     #FIXME:PATH
+path = "./checkpoint5/checkpoint_epoch_25"                     #FIXME:PATH
 net = Hydraplus.HP()
 net.load_state_dict(torch.load(path))
 net.eval()

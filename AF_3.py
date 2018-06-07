@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import Incep
-
+import matplotlib.pyplot as plt
+from scipy import misc 
 class AF3(nn.Module):
 
     def __init__(self, num_classes=26, aux_logits=False, transform_input=False, ret = False): #ccc changed here
@@ -60,6 +61,17 @@ class AF3(nn.Module):
 
         attentive = self.Att(F3)
         #8 x 8 x 8
+        '''sumatt = torch.sum(attentive,dim=1)
+        temp = attentive.data[0].cpu().numpy()
+        newimg = misc.imresize(sumatt.data[0].cpu().numpy(),(299,299))
+        plt.imshow(newimg,cmap='jet')
+        plt.savefig("af3")
+        print(temp)
+        for i in range(8):
+            nimg = temp[i]
+            newimg = misc.imresize(nimg,(299,299))
+            plt.imshow(newimg,cmap='jet')
+            plt.savefig("%s"%(i))'''
 
 
         attentive2 = self.patch(F.upsample(attentive,scale_factor=2))

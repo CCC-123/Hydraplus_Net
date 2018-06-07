@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import Incep
-
+import matplotlib.pyplot as plt
+from scipy import misc 
 class AF1(nn.Module):
 
     def __init__(self, num_classes=26, aux_logits=False, transform_input=False,ret = False): #ccc changed here
@@ -60,7 +61,10 @@ class AF1(nn.Module):
         #35 x 35 x 8
 
 
-
+        '''temp = torch.sum(attentive,dim=1)
+        newimg = misc.imresize(temp.data[0].cpu().numpy(),(299,299))
+        plt.imshow(newimg,cmap='jet')
+        plt.savefig("af1")'''                                       #draw heatmap
         ret = 0
         for i in range(8) :
             #print(F1.size())           N x c x h x w

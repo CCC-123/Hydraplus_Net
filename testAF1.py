@@ -93,7 +93,7 @@ for c in att:
     count = count + 1
 print(classes)
 
-path = "./checkpoint2/checkpoint_epoch_15"                     #FIXME:PATH
+path = "./checkpoint2/checkpoint_epoch_20"                     #FIXME:PATH
 net = AF_1.AF1()
 net.load_state_dict(torch.load(path))
 net.eval()
