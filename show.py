@@ -9,61 +9,31 @@ import torch.nn as nn
 
 import scipy.io as scio
 import torchvision.transforms as transforms
-
-import Hydraplus
 from torch.autograd import Variable
 
+import argparse
 
-def default_loader(path):
-    return Image.open(path).convert('RGB')
+import dataload
+import Hydraplus
+import Incep
+import AF_1
+import AF_2
+import AF_3
 
-class myImageFloder(data.Dataset):
-    def __init__(self, root, label, transform = None, target_transform=None, loader=default_loader):
+parser = argparse.ArgumentParser()
+parser.add_argument('-m',help = "choose model",choices = ['AF1','AF2','AF3','HP','MNet'],required = True)
+parser.add_argument('-p',help = 'wight file path',required = True)
+args = parser.parse_args()
 
-        fn = scio.loadmat(label)
-        imgs = []
-        testlabel = fn['test_label']
-        testimg = fn['test_images_name']
-        count = 0
-        for name in testimg:
-            #print name[0][0]
-            if os.path.isfile(os.path.join(root,name[0][0])):
-                #imgs.append((name[0][0],[x*2-1 for x in testlabel[count]]))   (-1,1)
-                imgs.append((name[0][0],testlabel[count]))
-            count=count+1
 
-        self.root = root
-        self.imgs = imgs
-        self.transform = transform
-        self.target_transform = target_transform
-        self.loader = loader
-        self.classes = fn['attributes']
-
-    def __getitem__(self, index):
-        fn, label = self.imgs[index]
-        img = self.loader(os.path.join(self.root, fn))
-        if self.transform is not None:
-            img = self.transform(img)
-        return img, torch.Tensor(label)
-
-    def __len__(self):
-        return len(self.imgs)
-    
-    def getName(self):
-        return self.classes
 
 def imshow(imgs):
     grid = torchvision.utils.make_grid(imgs)
     plt.imshow(grid.numpy().transpose(1,2,0))
-    plt.title("bat")
+    plt.title("show")
     plt.show()
 
 
-def checkpoint(epoch):
-    if not os.path.exists("checkpoint"):
-        os.mkdir("checkpoint")
-    path = "checkpoint_epoch_{}".format(epoch)
-    torch.save(net,path)
 
 
 
@@ -75,13 +45,17 @@ mytransform = transforms.Compose([
 )
 
 # torch.utils.data.DataLoader
-set = myImageFloder(root = "./data/PA-100K/release_data/release_data", label = "./data/PA-100K/annotation/annotation.mat", transform = mytransform )
+set = dataload.myImageFloder(root = "./data/PA-100K/release_data/release_data", 
+                            label = "./data/PA-100K/annotation/annotation.mat", 
+                            transform = mytransform,
+                            mode = 'test' )
 imgLoader = torch.utils.data.DataLoader(
          set, 
          batch_size= 1, shuffle= True, num_workers= 2)
 
 
-print len(set)
+print("image numbers: %d"%len(set)) 
+
 
 mat = scio.loadmat("./data/PA-100K/annotation/annotation.mat")
 att = mat["attributes"]
@@ -91,10 +65,21 @@ classes = []
 for c in att:
     classes.append(c[0][0])
     count = count + 1
-print(classes)
 
-path = "./checkpoint5/checkpoint_epoch_25"                     #FIXME:PATH
-net = Hydraplus.HP()
+
+path = args.p                     #FIXME:PATH
+if args.m == 'AF1':
+    net = AF_1.AF1()
+if args.m == 'AF2':
+    net = AF_2.AF2()
+if args.m == 'AF3':
+    net = AF_3.AF3()
+if args.m == 'HP':
+    net = Hydraplus.HP()
+if args.m == 'MNet':
+    net = Incep.Inception3()
+
+
 net.load_state_dict(torch.load(path))
 net.eval()
 net.cuda()
@@ -121,7 +106,7 @@ while True and x != 'n':
                 print(classes[count])
             count = count + 1
     print('\n')
-
+    print("Enter to continue,input 'n' to break")
     count = 0
     for item in labels[0]:
         if item.data[0] > 0:
