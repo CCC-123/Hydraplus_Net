@@ -93,9 +93,9 @@ Rec = 0.0
 while count < 10000:
     images,labels = dataiter.next()
     inputs, labels = Variable(images,volatile = True).cuda(), Variable(labels).cuda()
-    a = time.time()
+    #a = time.time()
     outputs = net(inputs)
-    b = time.time()
+    #b = time.time()
     #print(b-a)    
     Yandf = 0.1
     Yorf = 0.1

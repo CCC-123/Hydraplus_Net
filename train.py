@@ -45,7 +45,7 @@ parser.add_argument('-mpath',help = "load MNet weight path",default = None)
 parser.add_argument('-af1path',help = "load AF1 weight path",default = None)
 parser.add_argument('-af2path',help = "load AF2 weight path",default = None)
 parser.add_argument('-af3path',help = "load AF3 weight path",default = None)
-parser.add_argument()
+
 args = parser.parse_args()
 
 
@@ -87,7 +87,8 @@ print("image numbers %d"%len(set) )
 if args.m == 'AF1':
     net = AF_1.AF1()
 
-    if not args.p:
+    print(args.p)
+    if args.p:
         path = args.p
         net.load_state_dict(torch.load(path))
     else:
@@ -99,7 +100,7 @@ if args.m == 'AF1':
 if args.m == 'AF2':
     net = AF_2.AF2()
 
-    if not args.p:
+    if args.p:
         path = args.p
         net.load_state_dict(torch.load(path))
     else:
@@ -112,7 +113,7 @@ if args.m == 'AF3':
     net = AF_3.AF3()
 
 
-    if not args.p:
+    if args.p:
         path = args.p
         net.load_state_dict(torch.load(path))
     else:
@@ -123,7 +124,7 @@ if args.m == 'AF3':
         param.requires_grad = False
 if args.m == 'HP':
     net = Hydraplus.HP()
-    if not args.p:
+    if args.p:
         path = args.p
         net.load_state_dict(torch.load(path))
     else:
@@ -134,7 +135,7 @@ if args.m == 'HP':
 
 
     for param in net.MNet.parameters():
-    param.requires_grad = False
+        param.requires_grad = False
 
     for param in net.AF1.parameters():
         param.requires_grad = False
@@ -146,7 +147,7 @@ if args.m == 'HP':
         param.requires_grad = False
 if args.m == 'MNet':
     net = Incep.Inception3()
-    if not args.p:
+    if args.p:
         path = args.p
         net.load_state_dict(torch.load(path))
     else:
@@ -220,7 +221,7 @@ for epoch in range(1000):
                 running_loss = 0.0
 
     if epoch % 5 == 0:
-        checkpoint(epoch)
+        checkpoint(0)
         '''for param_group in optimizer.param_groups:
             param_group['lr'] = param_group['lr'] * 0.95'''
 
