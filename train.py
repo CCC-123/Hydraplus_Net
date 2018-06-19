@@ -51,8 +51,8 @@ args = parser.parse_args()
 
 def checkpoint(epoch):
     if not os.path.exists(args.m):
-        os.mkdir(arg.m)
-    savePath = arg.m+"/checkpoint_epoch_{}".format(epoch)
+        os.mkdir(args.m)
+    savePath = args.m+"/checkpoint_epoch_{}".format(epoch)
     torch.save(net.state_dict(),savePath)
 
 def weight_init(m):
@@ -182,7 +182,7 @@ weight = torch.Tensor([1.7226262226969686, 2.6802565029531618, 1.068213364415483
 criterion = nn.BCEWithLogitsLoss(weight = weight)          #TODO:1.learn 2. weight
 criterion.cuda()
 
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,net.parameters()), lr=0.001,momentum=0.9)
+optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,net.parameters()), lr=0.0002,momentum=0.9)
 
 running_loss = 0.0
 for epoch in range(1000):
@@ -210,10 +210,10 @@ for epoch in range(1000):
             
             # print statistics
             running_loss += loss.data[0]
-            if i % 100 == 0: # print every 1000 mini-batches
+            if i % 1000 == 0: # print every 1000 mini-batches
                 print('[ %d %5d] loss: %.6f' % ( epoch,i+1, running_loss / 100))
                 viz.updateTrace(
-                    X=np.array([epoch+i/8000.0]),
+                    X=np.array([epoch+i/5000.0]),
                     Y=np.array([running_loss]),
                     win=win,
                     name="1"
