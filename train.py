@@ -52,7 +52,7 @@ args = parser.parse_args()
 def checkpoint(epoch):
     if not os.path.exists(args.m):
         os.mkdir(args.m)
-    savePath = args.m+"/checkpoint_epoch_{}".format(epoch)
+    savePath = "./" + args.m +"/checkpoint_epoch_{}".format(epoch)
     torch.save(net.state_dict(),savePath)
 
 def weight_init(m):
